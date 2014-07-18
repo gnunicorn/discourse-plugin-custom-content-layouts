@@ -1,0 +1,4 @@
+uncategorized:
+  custom_layout_per_archetype:
+    default: false
+    client: true

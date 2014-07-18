@@ -44,7 +44,6 @@ export default {
 
         if (Discourse.SiteSettings.custom_layout_per_archetype) {
           tmplNames.push(this.get('post.topic.archetype') + '_post');
-          tmplNames.push(this.get('post.topic.archetype'));
         }
 
         var firstMatch = tmplNames.find(function(tmplName) {
