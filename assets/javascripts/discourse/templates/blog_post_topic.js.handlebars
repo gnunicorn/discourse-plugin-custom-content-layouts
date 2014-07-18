@@ -1,0 +1,246 @@
+<div class='container'>
+  {{custom-html "top"}}
+  {{Discourse.globalNotice}}
+  {{discourse-banner user=currentUser banner=Discourse.banner overlay=view.hasScrolled}}
+</div>
+
+
+{{#if postStream.loaded}}
+
+  {{plugin-outlet "adsense-topic-top"}}
+
+  {{#if postStream.firstPostPresent}}
+    <div id='topic-title'>
+      <div class='container'>
+        <div class='inner'>
+
+          {{#if showStarButton}}
+            <a {{bind-attr class=":star starred:starred"}} {{action toggleStar}} href='#' {{bind-attr title="starTooltip"}}></a>
+          {{/if}}
+
+          {{#if editingTopic}}
+            {{category-chooser valueAttribute="id" value=newCategoryId source=category_id}}
+            {{text-field id='edit-title' value=newTitle}}
+
+            <button class='btn btn-primary btn-small no-text' {{action finishedEditingTopic}}><i class='fa fa-check'></i></button>
+            <button class='btn btn-small no-text' {{action cancelEditingTopic}}><i class='fa fa-times'></i></button>
+          {{else}}
+            <h1>
+              {{#plugin-outlet 'blog-post-topic-title'}}
+                {{#if category.parentCategory}}
+                  {{bound-category-link category.parentCategory}}
+                {{/if}}
+                {{bound-category-link category}}
+                {{#if details.loaded}}
+                  {{topic-status topic=model}}
+                  <a href='{{unbound url}}' {{action jumpTop}}>
+                    {{#if topicSaving}}
+                      {{fancy_title}}
+                    {{else}}
+                      {{{fancy_title}}}
+                    {{/if}}
+                  </a>
+                {{/if}}
+
+
+                {{#if details.can_edit}}
+                  <a href='#' {{action editTopic}} class='edit-topic' title='{{i18n edit}}'><i class="fa fa-pencil"></i></a>
+                {{/if}}
+              {{/plugin-outlet}}
+            </h1>
+          {{/if}}
+          {{plugin-outlet "topic-title"}}
+        </div>
+      </div>
+    </div>
+  {{/if}}
+
+  <div class="container">
+    {{#with main_post}}
+      <article class='boxed' {{bind-attr id="postElementId"}} {{bind-attr data-post-id="id"}} data-user-id="{{unbound user_id}}">
+        <div class='row'>
+          {{#if showUserReplyTab}}
+            <a href='#' {{action toggleReplyHistory this target="view"}} class='reply-to-tab'>
+              {{#if loadingReplyHistory}}
+                {{i18n loading}}
+              {{else}}
+                <i class="fa fa-mail-forward"></i>&nbsp;
+                {{avatar reply_to_user imageSize="tiny"}}
+                {{reply_to_user.username}}
+              {{/if}}
+            </a>
+          {{/if}}
+          <div class='topic-body'>
+            <div class='topic-meta-data'>
+              <div class='post-info'>
+                <a class='post-date' {{bind-attr href="shareUrl" data-share-url="shareUrl" data-post-number="post_number"}}>{{age-with-tooltip created_at}}</a>
+              </div>
+              {{#if hasHistory}}
+                <div class='post-info edits'>
+                  {{#if can_view_edit_history}}
+                    <a href='#' class="{{unbound historyHeat}}" {{action showHistory this}} title="{{i18n post.last_edited_on}} {{raw-date updated_at}}">
+                      {{editCount}}
+                      <i class='fa fa-pencil'></i>
+                    </a>
+                  {{else}}
+                    <span class="{{unbound historyHeat}}" title="{{i18n post.last_edited_on}} {{raw-date updated_at}}">
+                      {{editCount}}
+                      <i class='fa fa-pencil'></i>
+                    </span>
+                  {{/if}}
+                </div>
+              {{/if}}
+              <div {{bind-attr class=":read-state read"}} title="{{i18n post.unread}}"><i class='fa fa-circle'></i></div>
+            </div>
+
+
+            <div {{bind-attr class="showUserReplyTab:avoid-tab view.repliesShown::bottom-round :contents :regular view.extraClass"}}>
+              <div class='cooked'>
+                {{{cooked}}}
+              </div>
+              {{#if cooked_hidden}}
+                <a href {{action expandHidden this}}>{{i18n post.show_hidden}}</a>
+              {{/if}}
+              {{#if view.showExpandButton}}
+                {{#if controller.loadingExpanded}}
+                  <button class="btn expand-post" disabled>{{i18n loading}}</button>
+                {{else}}
+                  <button {{action expandFirstPost this}} class='btn expand-post'>{{i18n post.show_full}}</button>
+                {{/if}}
+              {{/if}}
+              {{view 'post-menu' post=this adminMenu=view.adminMenu}}
+            </div>
+            {{view 'replies' content=replies}}
+            {{discourse-action-history post=this}}
+            {{plugin-outlet "www-post-info"}}
+            {{view 'topic-map-container' post=this topic=controller.model}}
+          </div>
+
+          {{post-gutter post=this
+                        links=internalLinks
+                        canReplyAsNewTopic=topic.details.can_reply_as_new_topic
+                        newTopicAction="replyAsNewTopic"}}
+        </div>
+        <div class="row">
+          <div class='topic-avatar'>
+             {{#unless userDeleted}}
+              <div {{bind-attr class=":contents byTopicCreator:topic-creator :trigger-expansion"}}>
+                <a class="main-avatar" href='{{unbound usernameUrl}}' {{action showPosterExpansion this}}>{{avatar this imageSize="large"}}</a>
+
+              </div>
+            {{else}}
+              <div class="contents">
+                <i class="fa fa-trash-o deleted-user-avatar"></i>
+              </div>
+            {{/unless}}
+            {{#if wiki}}
+              <div class="wiki"><i class="fa fa-pencil-square-o fa-3x"></i></div>
+            {{/if}}
+          </div>
+        </div>
+      </article>
+
+      {{plugin-outlet "adsense-after-posts"}}
+
+    {{/with}}
+  </div>
+
+  <h3>Comments</h3>
+
+  <div class="container posts with-main-post">
+
+    {{view Discourse.SelectedPostsView}}
+
+    <div class="row">
+      <section class="topic-area" id='topic' data-topic-id='{{unbound id}}'>
+        <div class='posts-wrapper'>
+
+          {{render 'topic-progress'}}
+
+          {{#if postStream.loadingAbove}}
+            <div class='spinner'>{{i18n loading}}</div>
+          {{/if}}
+
+          {{#unless postStream.loadingFilter}}
+            {{cloaked-collection cloakView="post"
+                                 idProperty="post_number"
+                                 defaultHeight="200"
+                                 content=postStream.posts
+                                 slackRatio="15"
+                                 loadingHTML=controller.loadingHTML
+                                 preservesContext="true"
+                                 uncloakDefault="true"
+                                 offsetFixedTop="header"
+                                 offsetFixedBottom="#reply-control"}}
+          {{/unless}}
+
+          {{#if postStream.loadingBelow}}
+            <div class='spinner'>{{i18n loading}}</div>
+          {{/if}}
+        </div>
+        <div id='topic-bottom'></div>
+
+        {{#if postStream.loadingFilter}}
+          <div class='spinner small'>{{i18n loading}}</div>
+        {{else}}
+          {{#if postStream.loadedAllPosts}}
+
+            {{view 'topic-closing' topic=model}}
+            {{view Discourse.TopicFooterButtonsView topicBinding="model"}}
+
+            {{plugin-outlet "adsense-topic-bottom"}}
+
+            {{#if details.suggested_topics.length}}
+              <div id='suggested-topics'>
+                <h3>{{i18n suggested_topics.title}}</h3>
+                <div class='topics'>
+                  {{basic-topic-list topics=details.suggested_topics}}
+                </div>
+                <br/>
+                <h3>{{{view.browseMoreMessage}}}</h3>
+              </div>
+            {{/if}}
+          {{/if}}
+        {{/if}}
+
+
+      </section>
+    </div>
+
+  </div>
+
+{{else}}
+  {{#if hasError}}
+    <div class='container'>
+      {{#if errorBodyHtml}}
+        {{{errorBodyHtml}}}
+      {{/if}}
+
+      {{#if message}}
+        <div class="message">
+          <h2>{{message}}</h2>
+          {{#unless currentUser}}
+            <button {{action showLogin}} class='btn btn-primary btn-small'>{{i18n log_in}}</button>
+          {{/unless}}
+        </div>
+      {{/if}}
+    </div>
+  {{else}}
+    <div class='container'>
+      <div class='spinner'>{{i18n loading}}</div>
+    </div>
+  {{/if}}
+{{/if}}
+
+{{render "share"}}
+{{render "posterExpansion"}}
+
+{{plugin-outlet "more-expansions"}}
+
+{{#if currentUser.enable_quoting}}
+  {{render "quote-button"}}
+{{/if}}
+
+{{#if currentUser.canManageTopic}}
+  {{render "topicAdminMenu" content}}
+{{/if}}
